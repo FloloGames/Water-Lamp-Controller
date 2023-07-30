@@ -1,0 +1,25 @@
+name: water_mushroom
+description: A new Flutter project.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.0.5 <4.0.0"
+
+dependencies:
+  cupertino_icons: ^1.0.5
+  flutter:
+    sdk: flutter
+  flutter_colorpicker: ^1.0.3
+  flutter_reactive_ble: ^5.1.1
+  location_permissions: ^4.0.1
+  permission_handler: ^10.4.3
+  quick_blue: ^0.4.1+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
