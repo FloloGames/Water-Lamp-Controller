@@ -21,11 +21,6 @@ class DeviceControlScreen extends StatefulWidget {
 
 class _DeviceControlScreenState extends State<DeviceControlScreen> {
   final int _maxDataSendInterval = 100; //in ms
-  DeviceConnectionState _currentConnectionState =
-      DeviceConnectionState.disconnected;
-  StreamSubscription<ConnectionStateUpdate>? _currentConnectionSubscription;
-  static StreamSubscription<List<int>>? _characteristicSubscription;
-  QualifiedCharacteristic? _rxCharacteristic;
 
   String _debugText = "_debugText";
   Color _selectedColor = Colors.white;
@@ -38,8 +33,9 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
   void _toggleLights(bool value) {
     _lightsOn = value;
     setState(() {});
-    if (_canSendData())
-      WaterLampManager.setLights(_lightsOn, _rxCharacteristic);
+    if (_canSendData()) {
+      WaterLampManager.setLights(_lightsOn);
+    }
   }
 
   void _toggleWater(bool value) {
@@ -50,7 +46,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
       _setWater(0);
     }
     setState(() {});
-    if (_canSendData()) WaterLampManager.setWater(_waterOn, _rxCharacteristic);
+    if (_canSendData()) WaterLampManager.setWater(_waterOn);
   }
 
   void _changeColor(Color color) {
@@ -61,16 +57,18 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
       _lightsOn = true;
     }
     setState(() {});
-    if (_canSendData())
-      WaterLampManager.setColor(_selectedColor, _rxCharacteristic);
+    if (_canSendData()) {
+      WaterLampManager.setColor(_selectedColor);
+    }
   }
 
   void _setWater(double newValue) {
     _waterSpeed = newValue;
     if (newValue != 0) _waterOn = true;
     setState(() {});
-    if (_canSendData())
-      WaterLampManager.setWaterSpeed(_waterSpeed, _rxCharacteristic);
+    if (_canSendData()) {
+      WaterLampManager.setWaterSpeed(_waterSpeed);
+    }
   }
 
   bool _canSendData() {
@@ -85,44 +83,34 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
   @override
   void initState() {
     super.initState();
-    Stream<ConnectionStateUpdate> currentConnectionStream =
-        BLEHolder.flutterReactiveBle.connectToAdvertisingDevice(
-      id: widget.bluetoothDevice.id,
-      prescanDuration: const Duration(seconds: 1),
-      withServices: [BLEHolder.serviceUuid, BLEHolder.characteristicUuid],
-    );
-    _currentConnectionSubscription = currentConnectionStream.listen(
-      (event) {
-        _currentConnectionState = event.connectionState;
-        setState(() {});
-        if (_currentConnectionState == DeviceConnectionState.connected) {
-          _rxCharacteristic = QualifiedCharacteristic(
-            serviceId: BLEHolder.serviceUuid,
-            characteristicId: BLEHolder.characteristicUuid,
-            deviceId: event.deviceId,
-          );
-          _characteristicSubscription = BLEHolder.flutterReactiveBle
-              .subscribeToCharacteristic(_rxCharacteristic!)
-              .listen((event) {
-            String value = String.fromCharCodes(event);
-            print(value);
-          });
-        } else {
-          _rxCharacteristic = null;
-        }
-      },
-      onDone: () {
-        Navigator.pop(context);
-      },
-      onError: (e) {
-        Navigator.pop(context);
-      },
-    );
+    BluetoothManager.setOnCurrConnectionStreamChanged(() {
+      if (BluetoothManager.getCurrentConnectionState() ==
+          DeviceConnectionState.connected) {
+        BluetoothManager.startReadingMessage();
+      }
+      setState(() {});
+    });
+    BluetoothManager.setOnCurrConnectionStreamDone(() {
+      Navigator.pop(context);
+    });
+    BluetoothManager.setOnCurrConnectionStreamError((p0) {
+      Navigator.pop(context);
+    });
+    BluetoothManager.connectToDevice(widget.bluetoothDevice);
+    BluetoothManager.setOnBLEMsgReceived((String value) {
+      _debugText = value;
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    _currentConnectionSubscription?.cancel();
+    BluetoothManager.setOnCurrConnectionStreamChanged(null);
+    BluetoothManager.setOnCurrConnectionStreamDone(null);
+    BluetoothManager.setOnCurrConnectionStreamError(null);
+    BluetoothManager.setOnBLEMsgReceived(null);
+    BluetoothManager.stopReadingMessages();
+    BluetoothManager.disconnectDevice();
     super.dispose();
   }
 
@@ -131,7 +119,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${widget.bluetoothDevice.name}: ${_currentConnectionState.name}',
+          '${widget.bluetoothDevice.name}: ${BluetoothManager.getCurrentConnectionState().name}',
           style: const TextStyle(
             color: Colors.black,
           ),
@@ -150,8 +138,8 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
             duration: const Duration(milliseconds: 250),
             curve: Curves.fastOutSlowIn,
             child: Visibility(
-              visible:
-                  _currentConnectionState != DeviceConnectionState.connected,
+              visible: BluetoothManager.getCurrentConnectionState() !=
+                  DeviceConnectionState.connected,
               child: Container(
                 margin: const EdgeInsets.all(16.0),
                 child: const CircularProgressIndicator.adaptive(),
@@ -162,8 +150,8 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
             duration: const Duration(milliseconds: 750),
             curve: Curves.fastOutSlowIn,
             child: Visibility(
-              visible:
-                  _currentConnectionState == DeviceConnectionState.connected,
+              visible: BluetoothManager.getCurrentConnectionState() ==
+                  DeviceConnectionState.connected,
               child: Column(
                 children: [
                   _lightsControll(),
@@ -175,7 +163,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                   IconButton(
                     icon: const Icon(Icons.replay_outlined),
                     onPressed: () {
-                      WaterLampManager.getState(_rxCharacteristic);
+                      WaterLampManager.getState();
                     },
                   ),
                 ],

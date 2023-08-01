@@ -15,32 +15,23 @@ class BluetoothDeviceSelectionScreen extends StatefulWidget {
 
 class _BluetoothDeviceSelectionScreenState
     extends State<BluetoothDeviceSelectionScreen> {
-  final List<DiscoveredDevice> _devices = [];
-  StreamSubscription<DiscoveredDevice>? _scanStream;
-
-  Future<void> _listRefreshed() async {}
+  Future<void> _listRefreshed() async {
+    await BluetoothManager.stopScan();
+    await Future.delayed(const Duration(seconds: 1));
+    await BluetoothManager.startScan();
+  }
 
   @override
   void initState() {
     super.initState();
-    try {
-      _scanStream = BLEHolder.flutterReactiveBle.scanForDevices(
-        withServices: [BLEHolder.serviceUuid],
-      ).listen(
-        (device) {
-          if (_devices.any((element) => element.id == device.id)) return;
-          _devices.add(device);
-          setState(() {});
-        },
-      );
-    } catch (e) {
-      print(e);
-    }
+    BluetoothManager.setOnScanStreamChanged(() => setState(() {}));
+    BluetoothManager.startScan();
   }
 
   @override
   void dispose() {
-    _scanStream?.cancel();
+    BluetoothManager.setOnScanStreamChanged(null);
+    BluetoothManager.stopScan();
     super.dispose();
   }
 
@@ -51,11 +42,10 @@ class _BluetoothDeviceSelectionScreenState
         title: const Text(
           'Select Bluetooth Device',
           style: TextStyle(
-            color: Colors.black, // Set the app bar title color to black
+            color: Colors.black,
           ),
         ),
-        backgroundColor:
-            Colors.white, // Set the app bar background color to white
+        backgroundColor: Colors.white,
       ),
       body: _body(),
     );
@@ -88,7 +78,7 @@ class _BluetoothDeviceSelectionScreenState
     return RefreshIndicator(
       onRefresh: _listRefreshed,
       child: ListView.builder(
-        itemCount: _devices.length,
+        itemCount: BluetoothManager.getDevices().length,
         itemBuilder: _bluetoothListTile,
       ),
     );
@@ -98,26 +88,28 @@ class _BluetoothDeviceSelectionScreenState
     return ListTile(
       enabled: true,
       title: Text(
-        _devices[index].name.isEmpty ? "Empty Name" : _devices[index].name,
+        BluetoothManager.getDevices()[index].name.isEmpty
+            ? "Empty Name"
+            : BluetoothManager.getDevices()[index].name,
         style: const TextStyle(
           fontSize: 16.0,
           fontWeight: FontWeight.bold,
         ),
       ),
       subtitle: Text(
-        _devices[index].id,
+        BluetoothManager.getDevices()[index].id,
         style: const TextStyle(
           fontSize: 12.0,
           color: Colors.grey,
         ),
       ),
       onTap: () {
-        _scanStream?.cancel();
+        BluetoothManager.stopScan();
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => DeviceControlScreen(
-              bluetoothDevice: _devices[index],
+              bluetoothDevice: BluetoothManager.getDevices()[index],
             ),
           ),
         );

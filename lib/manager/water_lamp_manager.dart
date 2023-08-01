@@ -26,8 +26,7 @@ class WaterLampManager {
    * "0;255;0;0\n"
    * 0 = setColor; R; G, B \ncommand ended
    */
-  static Future<void> setColor(
-      Color color, QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setColor(Color color) {
     String command = _setColor.toString() +
         _splitChar +
         color.red.toString() +
@@ -35,46 +34,42 @@ class WaterLampManager {
         color.green.toString() +
         _splitChar +
         color.blue.toString();
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> setColorMode(
-      int mode, QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setColorMode(int mode) {
     String command = _setColorMode.toString() + _splitChar + mode.toString();
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> setLights(
-      bool state, QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setLights(bool state) {
     String command = "$_setLight$_splitChar$state";
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> setWater(
-      bool state, QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setWater(bool state) {
     String command = _setWater.toString() + _splitChar + state.toString();
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> setWaterSpeed(
-      double speed, QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setWaterSpeed(double speed) {
     String command =
         _setWaterSpeed.toString() + _splitChar + speed.toInt().toString();
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> setTimer(QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setTimer() {
     String command = _setTimer.toString();
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> getState(QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> getState() {
     String command = _getState.toString();
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 
-  static Future<void> setDateTime(QualifiedCharacteristic? rxCharacteristic) {
+  static Future<bool> setDateTime() {
     String command = "$_setDateTime${_splitChar}setDateTime";
-    return BLEHolder.sendMessage(command, rxCharacteristic);
+    return BluetoothManager.sendMessage(command);
   }
 }
