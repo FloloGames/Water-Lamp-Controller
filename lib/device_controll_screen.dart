@@ -1,6 +1,5 @@
 // import 'package:bottom_picker/bottom_picker.dart';
 // import 'package:bottom_picker/resources/arrays.dart';
-import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

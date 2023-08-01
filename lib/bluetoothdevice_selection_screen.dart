@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:water_mushroom/manager/bluetooth_manager.dart';
 import 'device_controll_screen.dart';
 

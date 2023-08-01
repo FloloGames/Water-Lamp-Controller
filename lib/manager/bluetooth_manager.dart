@@ -104,6 +104,7 @@ class BluetoothManager {
   static Future<bool> startScan() async {
     if (_scanStream != null) return true;
 
+    //TODO
     bool granted = true;
 
     if (Platform.isAndroid) {
@@ -181,8 +182,8 @@ class BluetoothManager {
         _currentConnectionState = event.connectionState;
         if (_currentConnectionState == DeviceConnectionState.connected) {
           _rxCharacteristic = QualifiedCharacteristic(
-            serviceId: BLEHolder.serviceUuid,
-            characteristicId: BLEHolder.characteristicUuid,
+            serviceId: _serviceUuid,
+            characteristicId: _characteristicUuid,
             deviceId: event.deviceId,
           );
         } else {
