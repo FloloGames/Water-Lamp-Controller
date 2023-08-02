@@ -105,7 +105,7 @@ class BluetoothManager {
     if (_scanStream != null) return true;
 
     //TODO
-    bool granted = true;
+    // bool granted = true;
 
     if (Platform.isAndroid) {
       WidgetsFlutterBinding.ensureInitialized();
@@ -124,7 +124,7 @@ class BluetoothManager {
         (key, value) {
           print("$key : $value");
           if (!value.isGranted) {
-            granted = false;
+            // granted = false;
             return;
           }
         },
