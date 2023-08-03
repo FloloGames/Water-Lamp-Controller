@@ -1,5 +1,5 @@
-// import 'package:bottom_picker/bottom_picker.dart';
-// import 'package:bottom_picker/resources/arrays.dart';
+import 'package:bottom_picker/bottom_picker.dart';
+import 'package:bottom_picker/resources/arrays.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,51 +22,41 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
   final int _maxDataSendInterval = 100; //in ms
 
   String _debugText = "_debugText";
-  Color _selectedColor = Colors.white;
-  double _waterSpeed = 0;
-  bool _lightsOn = false;
-  bool _waterOn = false;
-  // bool _timerOn = false;
+
   int _lastSendDataTime = 0;
 
   void _toggleLights(bool value) {
-    _lightsOn = value;
+    WaterLampManager.lightsOn = value;
     setState(() {});
     if (_canSendData()) {
-      WaterLampManager.setLights(_lightsOn);
+      WaterLampManager.setLights();
     }
   }
 
   void _toggleWater(bool value) {
-    _waterOn = value;
-    if (_waterOn) {
-      _setWater(125);
-    } else {
-      _setWater(0);
-    }
+    WaterLampManager.waterOn = value;
+
     setState(() {});
-    if (_canSendData()) WaterLampManager.setWater(_waterOn);
+    if (_canSendData()) WaterLampManager.setWater();
   }
 
   void _changeColor(Color color) {
-    _selectedColor = color;
-    if (_selectedColor.red != 0 ||
-        _selectedColor.green != 0 ||
-        _selectedColor.blue != 0) {
-      _lightsOn = true;
+    WaterLampManager.selectedColor = color;
+    if (color.red != 0 || color.green != 0 || color.blue != 0) {
+      WaterLampManager.lightsOn = true;
     }
     setState(() {});
     if (_canSendData()) {
-      WaterLampManager.setColor(_selectedColor);
+      WaterLampManager.setColor();
     }
   }
 
   void _setWater(double newValue) {
-    _waterSpeed = newValue;
-    if (newValue != 0) _waterOn = true;
+    WaterLampManager.waterSpeed = newValue;
+    // if (newValue != 0) WaterLampManager.waterOn = true;
     setState(() {});
     if (_canSendData()) {
-      WaterLampManager.setWaterSpeed(_waterSpeed);
+      WaterLampManager.setWaterSpeed();
     }
   }
 
@@ -97,6 +87,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
     });
     BluetoothManager.connectToDevice(widget.bluetoothDevice);
     BluetoothManager.setOnBLEMsgReceived((String value) {
+      WaterLampManager.computeMessage(value);
       _debugText = value;
       setState(() {});
     });
@@ -155,7 +146,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                 children: [
                   _lightsControll(),
                   _waterControll(),
-                  // _timerControll(),
+                  _timerControll(),
                   const SizedBox(height: 20),
                   Text(_debugText),
                   const SizedBox(height: 20),
@@ -193,7 +184,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
               ),
               const Spacer(),
               CupertinoSwitch(
-                value: _lightsOn,
+                value: WaterLampManager.lightsOn,
                 onChanged: (bool newValue) {
                   _toggleLights(newValue);
                 },
@@ -203,9 +194,9 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
           ),
         ),
         Visibility(
-          visible: _lightsOn,
+          visible: WaterLampManager.lightsOn,
           child: HueRingPicker(
-            pickerColor: _selectedColor,
+            pickerColor: WaterLampManager.selectedColor,
             onColorChanged: (color) => _changeColor(color),
             enableAlpha: false,
             displayThumbColor: true,
@@ -235,7 +226,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                 ),
                 const Spacer(),
                 CupertinoSwitch(
-                  value: _lightsOn,
+                  value: WaterLampManager.lightsOn,
                   onChanged: (bool newValue) {
                     _toggleLights(newValue);
                   },
@@ -244,9 +235,9 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
               ],
             ),
             Visibility(
-              visible: _lightsOn,
+              visible: WaterLampManager.lightsOn,
               child: HueRingPicker(
-                pickerColor: _selectedColor,
+                pickerColor: WaterLampManager.selectedColor,
                 onColorChanged: (color) => _changeColor(color),
                 enableAlpha: false,
                 displayThumbColor: true,
@@ -281,7 +272,7 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
                 ),
                 const Spacer(),
                 CupertinoSwitch(
-                  value: _waterOn,
+                  value: WaterLampManager.waterOn,
                   onChanged: (bool newValue) {
                     _toggleWater(newValue);
                   },
@@ -290,9 +281,9 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
               ],
             ),
             Visibility(
-              visible: _waterOn,
+              visible: WaterLampManager.waterOn,
               child: CupertinoSlider(
-                value: _waterSpeed,
+                value: WaterLampManager.waterSpeed,
                 min: 0.0,
                 max: 255.0,
                 onChanged: (newValue) => _setWater(newValue),
@@ -304,89 +295,113 @@ class _DeviceControlScreenState extends State<DeviceControlScreen> {
     );
   }
 
-  // Widget _timerControll() {
-  //   return AnimatedSize(
-  //     duration: const Duration(milliseconds: 250),
-  //     curve: Curves.fastOutSlowIn,
-  //     child: Container(
-  //       color: Colors.white,
-  //       margin: const EdgeInsets.symmetric(vertical: 4.0),
-  //       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12),
-  //       child: Column(
-  //         children: [
-  //           Row(
-  //             mainAxisAlignment: MainAxisAlignment.center,
-  //             children: [
-  //               const Text(
-  //                 'Timer',
-  //                 style: TextStyle(
-  //                   fontSize: 16.0,
-  //                   fontWeight: FontWeight.bold,
-  //                 ),
-  //               ),
-  //               const Spacer(),
-  //               CupertinoSwitch(
-  //                 value: _timerOn,
-  //                 onChanged: (bool newValue) {
-  //                   if (!_lightsOn && !_waterOn) {
-  //                     newValue = false;
-  //                   }
-  //                   setState(() {
-  //                     _timerOn = newValue;
-  //                   });
-  //                 },
-  //                 activeColor: CupertinoColors.activeGreen,
-  //               ),
-  //             ],
-  //           ),
-  //           Visibility(
-  //             visible: _timerOn,
-  //             child: Column(
-  //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //               children: [
-  //                 const SizedBox(height: 20),
-  //                 CupertinoButton(
-  //                   onPressed: () {},
-  //                   color: CupertinoColors.systemGrey,
-  //                   child: const Text(
-  //                     'Set Timer',
-  //                     style: TextStyle(fontSize: 18),
-  //                   ),
-  //                 ),
-  //                 TextButton(
-  //                   onPressed: () async {
-  //                     BottomPicker.time(
-  //                       title: 'Set your next meeting time',
-  //                       titleStyle: const TextStyle(
-  //                         fontWeight: FontWeight.bold,
-  //                         fontSize: 15,
-  //                         color: Colors.orange,
-  //                       ),
-  //                       onSubmit: (index) {
-  //                         print(index);
-  //                       },
-  //                       onClose: () {
-  //                         print('Picker closed');
-  //                       },
-  //                       bottomPickerTheme: BottomPickerTheme.orange,
-  //                       use24hFormat: true,
-  //                     ).show(context);
-  //                   },
-  //                   child: const Text("Pick Time"),
-  //                 ),
-  //                 TimePickerSpinnerPopUp(
-  //                   mode: CupertinoDatePickerMode.time,
-  //                   initTime: DateTime.now(),
-  //                   onChange: (dateTime) {
-  //                     // Implement your logic with select dateTime
-  //                   },
-  //                 )
-  //               ],
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _timerControll() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.fastOutSlowIn,
+      child: Container(
+        color: Colors.white,
+        margin: const EdgeInsets.symmetric(vertical: 4.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Timer',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                CupertinoSwitch(
+                  value: WaterLampManager.timerOn,
+                  onChanged: (bool newValue) {
+                    if (!WaterLampManager.lightsOn &&
+                        !WaterLampManager.waterOn) {
+                      newValue = false;
+                    }
+                    WaterLampManager.timerOn = newValue;
+                    setState(() {});
+                  },
+                  activeColor: CupertinoColors.activeGreen,
+                ),
+              ],
+            ),
+            Visibility(
+              visible: WaterLampManager.timerOn,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  const SizedBox(height: 20),
+                  CupertinoButton(
+                    onPressed: () async {
+                      BottomPicker.time(
+                        title: 'Set the timer to shut down',
+                        titleStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.black,
+                        ),
+                        displaySubmitButton: true,
+                        buttonSingleColor: Colors.black,
+                        dismissable: true,
+                        displayCloseIcon: false,
+                        buttonAlignement: MainAxisAlignment.center,
+                        onSubmit: (selectedTime) {
+                          // DateTime time = (DateTime)selectedTime;
+                          print("index");
+                          print(selectedTime);
+                        },
+                        onClose: () {
+                          print('Picker closed');
+                        },
+                        bottomPickerTheme: BottomPickerTheme.blue,
+                        use24hFormat: true,
+                      ).show(context);
+                    },
+                    color: CupertinoColors.systemGrey,
+                    child: const Text(
+                      'Set Timer',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  // TextButton(
+                  //   onPressed: () async {
+                  //     BottomPicker.time(
+                  //       title: 'Set your next meeting time',
+                  //       titleStyle: const TextStyle(
+                  //         fontWeight: FontWeight.bold,
+                  //         fontSize: 15,
+                  //         color: Colors.orange,
+                  //       ),
+                  //       onSubmit: (index) {
+                  //         print(index);
+                  //       },
+                  //       onClose: () {
+                  //         print('Picker closed');
+                  //       },
+                  //       bottomPickerTheme: BottomPickerTheme.orange,
+                  //       use24hFormat: true,
+                  //     ).show(context);
+                  //   },
+                  //   child: const Text("Pick Time"),
+                  // ),
+                  // // TimePickerSpinnerPopUp(
+                  // //   mode: CupertinoDatePickerMode.time,
+                  // //   initTime: DateTime.now(),
+                  // //   onChange: (dateTime) {
+                  // //     // Implement your logic with select dateTime
+                  // //   },
+                  // // ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
